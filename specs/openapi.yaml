@@ -1,0 +1,721 @@
+openapi: "3.0.3"
+info:
+  title: 家庭无唠叨协作平台 API
+  description: 家庭共享任务管理系统的 RESTful API 接口规范
+  version: "1.0.0"
+  contact:
+    name: 开发团队
+
+servers:
+  - url: http://localhost:3001/api
+    description: 本地开发环境
+  - url: https://your-domain.com/api
+    description: 生产环境
+
+tags:
+  - name: Auth
+    description: 认证（微信登录、Token 刷新）
+  - name: User
+    description: 用户信息
+  - name: Family
+    description: 家庭管理
+  - name: Task
+    description: 任务管理（核心）
+  - name: Upload
+    description: 文件上传
+
+# ═══════════════════════════════════════════
+# 安全定义
+# ═══════════════════════════════════════════
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Access Token，有效期 2 小时
+
+  schemas:
+    # ── 通用 ──
+    SuccessResponse:
+      type: object
+      properties:
+        code: { type: integer, example: 0 }
+        message: { type: string, example: "ok" }
+        data: { type: object }
+
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: integer, example: 40001 }
+        message: { type: string, example: "错误描述" }
+        detail: { type: string, example: "详细错误信息" }
+
+    PaginatedData:
+      type: object
+      properties:
+        items: { type: array }
+        total: { type: integer, example: 100 }
+        page: { type: integer, example: 1 }
+        pageSize: { type: integer, example: 20 }
+
+    # ── 用户 ──
+    UserBrief:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nickname: { type: string, example: "小明妈妈" }
+        avatarUrl: { type: string, nullable: true, example: "https://..." }
+
+    UserProfile:
+      allOf:
+        - $ref: "#/components/schemas/UserBrief"
+        - type: object
+          properties:
+            families:
+              type: array
+              items:
+                type: object
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  role: { type: string, enum: [ORGANIZER, MEMBER] }
+
+    # ── 认证 ──
+    LoginRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, description: 微信 OAuth code 或 wx.login code }
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string, example: "eyJhbG..." }
+        refreshToken: { type: string, example: "eyJhbG..." }
+        expiresIn: { type: integer, example: 7200 }
+        user: { $ref: "#/components/schemas/UserBrief" }
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        expiresIn: { type: integer }
+
+    # ── 家庭 ──
+    CreateFamilyRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 64, example: "幸福三口之家" }
+
+    FamilyDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        inviteCode: { type: string, example: "ABC123" }
+        createdBy: { type: string, format: uuid }
+        createdAt: { type: string, format: date-time }
+
+    FamilyWithRole:
+      allOf:
+        - $ref: "#/components/schemas/FamilyDetail"
+        - type: object
+          properties:
+            role: { type: string, enum: [ORGANIZER, MEMBER] }
+            memberCount: { type: integer, example: 3 }
+
+    MemberDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid }
+        nickname: { type: string }
+        avatarUrl: { type: string, nullable: true }
+        role: { type: string, enum: [ORGANIZER, MEMBER] }
+        joinedAt: { type: string, format: date-time }
+
+    InvitationResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, example: "XYZ789" }
+        expiresAt: { type: string, format: date-time }
+        inviteUrl: { type: string, example: "https://your-domain.com/invite?code=XYZ789" }
+
+    JoinFamilyRequest:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string, example: "XYZ789" }
+
+    JoinFamilyResponse:
+      type: object
+      properties:
+        familyId: { type: string, format: uuid }
+        familyName: { type: string }
+        role: { type: string, enum: [MEMBER] }
+
+    # ── 任务 ──
+    CreateTaskRequest:
+      type: object
+      required: [title, deadline]
+      properties:
+        title: { type: string, maxLength: 128, example: "今天洗碗" }
+        description: { type: string, nullable: true, example: "用洗洁精认真洗" }
+        difficulty: { type: integer, minimum: 1, maximum: 5, default: 1 }
+        deadline: { type: string, format: date-time, example: "2026-06-10T20:00:00Z" }
+        assignedTo: { type: string, format: uuid, nullable: true, description: 执行人用户ID }
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title: { type: string, maxLength: 128 }
+        description: { type: string, nullable: true }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        deadline: { type: string, format: date-time }
+        assignedTo: { type: string, format: uuid, nullable: true }
+
+    TaskDetail:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        familyId: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string, nullable: true }
+        difficulty: { type: integer }
+        deadline: { type: string, format: date-time }
+        status: { type: string, enum: [PENDING_ASSIGNMENT, PENDING_COMPLETION, PENDING_VERIFICATION, COMPLETED, CANCELLED] }
+        assignedTo: { $ref: "#/components/schemas/UserBrief" }
+        createdBy: { $ref: "#/components/schemas/UserBrief" }
+        completionPhoto: { type: string, nullable: true }
+        completedAt: { type: string, format: date-time, nullable: true }
+        verifiedAt: { type: string, format: date-time, nullable: true }
+        verifiedBy: { $ref: "#/components/schemas/UserBrief" }
+        rejectionReason: { type: string, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancelledBy: { $ref: "#/components/schemas/UserBrief" }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    TaskListItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        difficulty: { type: integer }
+        deadline: { type: string, format: date-time }
+        status: { type: string }
+        assignedTo: { $ref: "#/components/schemas/UserBrief" }
+        createdBy: { $ref: "#/components/schemas/UserBrief" }
+        createdAt: { type: string, format: date-time }
+
+    RejectTaskRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, example: "碗没洗干净，请重新洗" }
+
+    CancelTaskRequest:
+      type: object
+      properties:
+        reason: { type: string, nullable: true, example: "今天不在家吃饭" }
+
+    # ── 上传 ──
+    UploadResponse:
+      type: object
+      properties:
+        url: { type: string, example: "/uploads/2026/06/10/uuid-photo.jpg" }
+        originalName: { type: string, example: "photo.jpg" }
+        size: { type: integer, example: 204800 }
+
+# ═══════════════════════════════════════════
+# 接口路径
+# ═══════════════════════════════════════════
+paths:
+  # ── Auth ──
+  /auth/wechat/h5/login:
+    post:
+      tags: [Auth]
+      summary: H5微信登录
+      description: 微信公众号网页授权登录，用 code 换取 JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/LoginResponse" }
+
+  /auth/wechat/mp/login:
+    post:
+      tags: [Auth]
+      summary: 小程序微信登录
+      description: 微信小程序登录，用 wx.login code 换取 JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/LoginResponse" }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: 刷新Token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: 刷新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/RefreshResponse" }
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 获取当前用户信息
+      responses:
+        "200":
+          description: 用户信息
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/UserProfile" }
+
+  # ── User ──
+  /users/me:
+    patch:
+      tags: [User]
+      summary: 更新个人资料
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname: { type: string }
+                avatarUrl: { type: string }
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/UserBrief" }
+
+  # ── Family ──
+  /families:
+    post:
+      tags: [Family]
+      summary: 创建家庭
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFamilyRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/FamilyDetail" }
+    get:
+      tags: [Family]
+      summary: 我的家庭列表
+      responses:
+        "200":
+          description: 家庭列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/FamilyWithRole" }
+
+  /families/join:
+    post:
+      tags: [Family]
+      summary: 通过邀请码加入家庭
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinFamilyRequest"
+      responses:
+        "200":
+          description: 加入成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/JoinFamilyResponse" }
+
+  /families/{familyId}:
+    get:
+      tags: [Family]
+      summary: 家庭详情
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 家庭详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/FamilyDetail" }
+
+  /families/{familyId}/members:
+    get:
+      tags: [Family]
+      summary: 家庭成员列表
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 成员列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/MemberDetail" }
+
+  /families/{familyId}/invitations:
+    post:
+      tags: [Family]
+      summary: 生成邀请码
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "201":
+          description: 邀请码
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/InvitationResponse" }
+
+  /families/{familyId}/members/{memberId}:
+    delete:
+      tags: [Family]
+      summary: 移除家庭成员
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: memberId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 移除成功
+
+  # ── Task ──
+  /families/{familyId}/tasks:
+    post:
+      tags: [Task]
+      summary: 创建任务
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/TaskDetail" }
+    get:
+      tags: [Task]
+      summary: 任务列表
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: status, in: query, schema: { type: string, enum: [PENDING_COMPLETION, PENDING_VERIFICATION, COMPLETED] } }
+        - { name: assignedTo, in: query, schema: { type: string, format: uuid } }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, default: 20, maximum: 50 } }
+      responses:
+        "200":
+          description: 任务列表（分页）
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        allOf:
+                          - $ref: "#/components/schemas/PaginatedData"
+                          - type: object
+                            properties:
+                              items: { type: array, items: { $ref: "#/components/schemas/TaskListItem" } }
+
+  /families/{familyId}/tasks/{taskId}:
+    get:
+      tags: [Task]
+      summary: 任务详情
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 任务详情
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/TaskDetail" }
+    patch:
+      tags: [Task]
+      summary: 编辑任务
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: 编辑成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/TaskDetail" }
+
+  /families/{familyId}/tasks/{taskId}/complete:
+    post:
+      tags: [Task]
+      summary: 标记任务完成
+      description: 执行人标记任务完成，可附带照片凭证
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                photo: { type: string, format: binary, description: "完成照片（可选，最大5MB）" }
+      responses:
+        "200":
+          description: 标记完成
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, example: "PENDING_VERIFICATION" }
+                          completedAt: { type: string, format: date-time }
+                          completionPhoto: { type: string, nullable: true }
+
+  /families/{familyId}/tasks/{taskId}/verify:
+    post:
+      tags: [Task]
+      summary: 验收通过
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 验收通过
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, example: "COMPLETED" }
+                          verifiedAt: { type: string, format: date-time }
+                          verifiedBy: { $ref: "#/components/schemas/UserBrief" }
+
+  /families/{familyId}/tasks/{taskId}/reject:
+    post:
+      tags: [Task]
+      summary: 驳回任务
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectTaskRequest"
+      responses:
+        "200":
+          description: 已驳回
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, example: "PENDING_COMPLETION" }
+                          rejectionReason: { type: string }
+
+  /families/{familyId}/tasks/{taskId}/cancel:
+    post:
+      tags: [Task]
+      summary: 取消任务
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelTaskRequest"
+      responses:
+        "200":
+          description: 已取消
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          id: { type: string, format: uuid }
+                          status: { type: string, example: "CANCELLED" }
+                          cancelledAt: { type: string, format: date-time }
+
+  # ── Upload ──
+  /upload/image:
+    post:
+      tags: [Upload]
+      summary: 上传图片
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary, description: "图片文件（jpg/png/webp，最大5MB）" }
+      responses:
+        "200":
+          description: 上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/UploadResponse" }

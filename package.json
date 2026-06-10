@@ -1,0 +1,19 @@
+{
+  "name": "family-harmony-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "家庭共享任务与无唠叨协作平台",
+  "scripts": {
+    "dev:frontend": "cd apps/frontend && pnpm dev",
+    "dev:backend": "cd apps/backend && pnpm dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm -r test:e2e"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}
