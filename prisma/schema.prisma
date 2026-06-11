@@ -1,5 +1,6 @@
 // Prisma Schema - 家庭共享任务协作平台
 // 数据库: PostgreSQL 16
+// 版本: v1.1 (同步 requirements.md v1.1)
 
 generator client {
   provider = "prisma-client-js"
@@ -17,14 +18,21 @@ datasource db {
 enum MemberRole {
   ORGANIZER
   MEMBER
+  CHILD // 孩子/青少年成员，权限受限
 }
 
 enum TaskStatus {
-  PENDING_ASSIGNMENT   // 已创建，未分配
-  PENDING_COMPLETION   // 已分配，等待执行
-  PENDING_VERIFICATION // 等待验收
+  PENDING_COMPLETION   // 待完成（已分配执行人）
+  PENDING_VERIFICATION // 待验收
+  REJECTED             // 已驳回（需重新处理）
   COMPLETED            // 已完成
   CANCELLED            // 已取消
+}
+
+enum RepeatRule {
+  NONE   // 不重复
+  DAILY  // 每天
+  WEEKLY // 每周
 }
 
 // ═══════════════════════════════════════════
@@ -32,21 +40,21 @@ enum TaskStatus {
 // ═══════════════════════════════════════════
 
 model User {
-  id               String        @id @default(uuid()) @db.Uuid
-  wechatOpenid     String        @unique @map("wechat_openid") @db.VarChar(128)
-  wechatUnionid    String?       @map("wechat_unionid") @db.VarChar(128)
-  nickname         String        @db.VarChar(64)
-  avatarUrl        String?       @map("avatar_url") @db.VarChar(512)
-  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+  id            String   @id @default(uuid()) @db.Uuid
+  wechatOpenid  String   @unique @map("wechat_openid") @db.VarChar(128)
+  wechatUnionid String?  @map("wechat_unionid") @db.VarChar(128)
+  nickname      String   @db.VarChar(64)
+  avatarUrl     String?  @map("avatar_url") @db.VarChar(512)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   // 关系
-  familyMembers    FamilyMember[]
-  createdFamilies  Family[]      @relation("FamilyCreatedBy")
-  createdTasks     Task[]        @relation("TaskCreatedBy")
-  assignedTasks    Task[]        @relation("TaskAssignedTo")
-  verifiedTasks    Task[]        @relation("TaskVerifiedBy")
-  cancelledTasks   Task[]        @relation("TaskCancelledBy")
+  familyMembers      FamilyMember[]
+  createdFamilies    Family[]      @relation("FamilyCreatedBy")
+  createdTasks       Task[]        @relation("TaskCreatedBy")
+  assignedTasks      Task[]        @relation("TaskAssignedTo")
+  verifiedTasks      Task[]        @relation("TaskVerifiedBy")
+  cancelledTasks     Task[]        @relation("TaskCancelledBy")
   createdInvitations Invitation[]
 
   @@index([wechatUnionid])
@@ -54,12 +62,12 @@ model User {
 }
 
 model Family {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @db.VarChar(64)
-  createdBy   String   @map("created_by") @db.Uuid
-  inviteCode  String   @unique @map("invite_code") @db.VarChar(8)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @db.VarChar(64)
+  createdBy  String   @map("created_by") @db.Uuid
+  inviteCode String   @unique @map("invite_code") @db.VarChar(8)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
   // 关系
   creator     User           @relation("FamilyCreatedBy", fields: [createdBy], references: [id])
@@ -72,15 +80,16 @@ model Family {
 }
 
 model FamilyMember {
-  id        String     @id @default(uuid()) @db.Uuid
-  familyId  String     @map("family_id") @db.Uuid
-  userId    String     @map("user_id") @db.Uuid
-  role      MemberRole @default(MEMBER)
-  joinedAt  DateTime   @default(now()) @map("joined_at") @db.Timestamptz()
+  id              String     @id @default(uuid()) @db.Uuid
+  familyId        String     @map("family_id") @db.Uuid
+  userId          String     @map("user_id") @db.Uuid
+  role            MemberRole @default(MEMBER)
+  reminderEnabled Boolean    @default(true) @map("reminder_enabled") // 提醒开关（按家庭+用户维度）
+  joinedAt        DateTime   @default(now()) @map("joined_at") @db.Timestamptz()
 
   // 关系
-  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([familyId, userId])
   @@index([userId])
@@ -94,10 +103,13 @@ model Task {
   description      String?    @db.Text
   difficulty       Int        @default(1) @db.SmallInt
   deadline         DateTime   @db.Timestamptz()
-  status           TaskStatus @default(PENDING_ASSIGNMENT)
+  status           TaskStatus @default(PENDING_COMPLETION)
+  repeatRule       RepeatRule @default(NONE) @map("repeat_rule")
+  needsVerification Boolean   @default(false) @map("needs_verification")
   createdBy        String     @map("created_by") @db.Uuid
-  assignedTo       String?    @map("assigned_to") @db.Uuid
+  assignedTo       String     @map("assigned_to") @db.Uuid
   completedAt      DateTime?  @map("completed_at") @db.Timestamptz()
+  completionNote   String?    @map("completion_note") @db.Text
   completionPhoto  String?    @map("completion_photo") @db.VarChar(512)
   verifiedAt       DateTime?  @map("verified_at") @db.Timestamptz()
   verifiedBy       String?    @map("verified_by") @db.Uuid
@@ -105,21 +117,42 @@ model Task {
   hasNotified      Boolean    @default(false) @map("has_notified")
   cancelledAt      DateTime?  @map("cancelled_at") @db.Timestamptz()
   cancelledBy      String?    @map("cancelled_by") @db.Uuid
+  cancelledReason  String?    @map("cancelled_reason") @db.Text
   createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
 
   // 关系
-  family     Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
-  creator    User   @relation("TaskCreatedBy", fields: [createdBy], references: [id])
-  assignee   User?  @relation("TaskAssignedTo", fields: [assignedTo], references: [id])
-  verifier   User?  @relation("TaskVerifiedBy", fields: [verifiedBy], references: [id])
-  canceller  User?  @relation("TaskCancelledBy", fields: [cancelledBy], references: [id])
+  family    Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  creator   User   @relation("TaskCreatedBy", fields: [createdBy], references: [id])
+  assignee  User   @relation("TaskAssignedTo", fields: [assignedTo], references: [id])
+  verifier  User?  @relation("TaskVerifiedBy", fields: [verifiedBy], references: [id])
+  canceller User?  @relation("TaskCancelledBy", fields: [cancelledBy], references: [id])
 
   @@index([familyId, status])
   @@index([assignedTo, status])
   @@index([deadline, hasNotified])
   @@index([createdBy])
+  @@index([repeatRule])
+  @@index([needsVerification])
   @@map("tasks")
+}
+
+model TaskTemplate {
+  id                   String     @id @default(uuid()) @db.Uuid
+  title                String     @db.VarChar(128)
+  description          String?    @db.Text
+  difficulty           Int        @default(1) @db.SmallInt
+  suggestedRepeatRule  RepeatRule @default(NONE) @map("suggested_repeat_rule")
+  needsVerification    Boolean    @default(false) @map("needs_verification")
+  category             String     @default("家务") @db.VarChar(32)
+  sortOrder            Int        @default(0) @map("sort_order") @db.SmallInt
+  isActive             Boolean    @default(true) @map("is_active")
+  createdAt            DateTime   @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt            DateTime   @updatedAt @map("updated_at") @db.Timestamptz()
+
+  @@index([category])
+  @@index([isActive, sortOrder])
+  @@map("task_templates")
 }
 
 model Invitation {

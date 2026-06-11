@@ -2,7 +2,7 @@ openapi: "3.0.3"
 info:
   title: 家庭无唠叨协作平台 API
   description: 家庭共享任务管理系统的 RESTful API 接口规范
-  version: "1.0.0"
+  version: "1.1.0"
   contact:
     name: 开发团队
 
@@ -16,11 +16,13 @@ tags:
   - name: Auth
     description: 认证（微信登录、Token 刷新）
   - name: User
-    description: 用户信息
+    description: 用户信息与提醒设置
   - name: Family
-    description: 家庭管理
+    description: 家庭管理与任务统计
   - name: Task
     description: 任务管理（核心）
+  - name: Template
+    description: 任务模板
   - name: Upload
     description: 文件上传
 
@@ -82,7 +84,7 @@ components:
                 properties:
                   id: { type: string, format: uuid }
                   name: { type: string }
-                  role: { type: string, enum: [ORGANIZER, MEMBER] }
+                  role: { type: string, enum: [ORGANIZER, MEMBER, CHILD] }
 
     # ── 认证 ──
     LoginRequest:
@@ -111,6 +113,26 @@ components:
         accessToken: { type: string }
         expiresIn: { type: integer }
 
+    # ── 用户设置 ──
+    UserSettings:
+      type: object
+      properties:
+        settings:
+          type: array
+          items:
+            type: object
+            properties:
+              familyId: { type: string, format: uuid }
+              familyName: { type: string }
+              reminderEnabled: { type: boolean }
+
+    UpdateUserSettingsRequest:
+      type: object
+      required: [familyId, reminderEnabled]
+      properties:
+        familyId: { type: string, format: uuid }
+        reminderEnabled: { type: boolean }
+
     # ── 家庭 ──
     CreateFamilyRequest:
       type: object
@@ -132,7 +154,7 @@ components:
         - $ref: "#/components/schemas/FamilyDetail"
         - type: object
           properties:
-            role: { type: string, enum: [ORGANIZER, MEMBER] }
+            role: { type: string, enum: [ORGANIZER, MEMBER, CHILD] }
             memberCount: { type: integer, example: 3 }
 
     MemberDetail:
@@ -142,7 +164,8 @@ components:
         userId: { type: string, format: uuid }
         nickname: { type: string }
         avatarUrl: { type: string, nullable: true }
-        role: { type: string, enum: [ORGANIZER, MEMBER] }
+        role: { type: string, enum: [ORGANIZER, MEMBER, CHILD] }
+        reminderEnabled: { type: boolean, example: true }
         joinedAt: { type: string, format: date-time }
 
     InvitationResponse:
@@ -166,16 +189,43 @@ components:
         familyName: { type: string }
         role: { type: string, enum: [MEMBER] }
 
+    # ── 家庭统计 ──
+    FamilyStatsResponse:
+      type: object
+      properties:
+        members:
+          type: array
+          items:
+            type: object
+            properties:
+              userId: { type: string, format: uuid }
+              nickname: { type: string }
+              avatarUrl: { type: string, nullable: true }
+              pendingCount: { type: integer, example: 2 }
+              weeklyCompletedCount: { type: integer, example: 5 }
+
     # ── 任务 ──
     CreateTaskRequest:
       type: object
-      required: [title, deadline]
+      required: [title, deadline, assignedTo]
       properties:
         title: { type: string, maxLength: 128, example: "今天洗碗" }
         description: { type: string, nullable: true, example: "用洗洁精认真洗" }
         difficulty: { type: integer, minimum: 1, maximum: 5, default: 1 }
         deadline: { type: string, format: date-time, example: "2026-06-10T20:00:00Z" }
-        assignedTo: { type: string, format: uuid, nullable: true, description: 执行人用户ID }
+        assignedTo:
+          type: string
+          format: uuid
+          description: 执行人用户ID（必填，v1.1不再支持待分配）
+        repeatRule:
+          type: string
+          enum: [NONE, DAILY, WEEKLY]
+          default: NONE
+          description: 重复规则
+        needsVerification:
+          type: boolean
+          default: false
+          description: 是否需要组织者验收
 
     UpdateTaskRequest:
       type: object
@@ -184,7 +234,23 @@ components:
         description: { type: string, nullable: true }
         difficulty: { type: integer, minimum: 1, maximum: 5 }
         deadline: { type: string, format: date-time }
-        assignedTo: { type: string, format: uuid, nullable: true }
+        assignedTo: { type: string, format: uuid }
+        repeatRule:
+          type: string
+          enum: [NONE, DAILY, WEEKLY]
+        needsVerification: { type: boolean }
+
+    CompleteTaskRequest:
+      type: object
+      properties:
+        completionNote:
+          type: string
+          nullable: true
+          description: 完成备注（可选）
+        completionPhoto:
+          type: string
+          nullable: true
+          description: 完成照片URL（可选，先通过 POST /api/upload/image 获取）
 
     TaskDetail:
       type: object
@@ -195,9 +261,16 @@ components:
         description: { type: string, nullable: true }
         difficulty: { type: integer }
         deadline: { type: string, format: date-time }
-        status: { type: string, enum: [PENDING_ASSIGNMENT, PENDING_COMPLETION, PENDING_VERIFICATION, COMPLETED, CANCELLED] }
+        status:
+          type: string
+          enum: [PENDING_COMPLETION, PENDING_VERIFICATION, REJECTED, COMPLETED, CANCELLED]
+        repeatRule:
+          type: string
+          enum: [NONE, DAILY, WEEKLY]
+        needsVerification: { type: boolean }
         assignedTo: { $ref: "#/components/schemas/UserBrief" }
         createdBy: { $ref: "#/components/schemas/UserBrief" }
+        completionNote: { type: string, nullable: true }
         completionPhoto: { type: string, nullable: true }
         completedAt: { type: string, format: date-time, nullable: true }
         verifiedAt: { type: string, format: date-time, nullable: true }
@@ -205,6 +278,7 @@ components:
         rejectionReason: { type: string, nullable: true }
         cancelledAt: { type: string, format: date-time, nullable: true }
         cancelledBy: { $ref: "#/components/schemas/UserBrief" }
+        cancelledReason: { type: string, nullable: true }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
 
@@ -216,6 +290,10 @@ components:
         difficulty: { type: integer }
         deadline: { type: string, format: date-time }
         status: { type: string }
+        repeatRule: { type: string, enum: [NONE, DAILY, WEEKLY] }
+        needsVerification: { type: boolean }
+        isOverdue: { type: boolean, description: 计算状态：是否已逾期 }
+        isNearExpiry: { type: boolean, description: 计算状态：是否临近到期 }
         assignedTo: { $ref: "#/components/schemas/UserBrief" }
         createdBy: { $ref: "#/components/schemas/UserBrief" }
         createdAt: { type: string, format: date-time }
@@ -230,6 +308,21 @@ components:
       type: object
       properties:
         reason: { type: string, nullable: true, example: "今天不在家吃饭" }
+
+    # ── 模板 ──
+    TaskTemplateItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string, example: "洗碗" }
+        description: { type: string, nullable: true }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        suggestedRepeatRule:
+          type: string
+          enum: [NONE, DAILY, WEEKLY]
+        needsVerification: { type: boolean }
+        category: { type: string, example: "厨房" }
+        sortOrder: { type: integer }
 
     # ── 上传 ──
     UploadResponse:
@@ -357,6 +450,48 @@ paths:
                     properties:
                       data: { $ref: "#/components/schemas/UserBrief" }
 
+  /users/me/settings:
+    get:
+      tags: [User]
+      summary: 获取提醒设置
+      description: 获取当前用户在各家庭下的提醒开关状态
+      responses:
+        "200":
+          description: 提醒设置列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/UserSettings" }
+    patch:
+      tags: [User]
+      summary: 更新提醒设置
+      description: 更新当前用户在指定家庭下的提醒开关
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserSettingsRequest"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          familyId: { type: string, format: uuid }
+                          reminderEnabled: { type: boolean }
+
   # ── Family ──
   /families:
     post:
@@ -456,6 +591,25 @@ paths:
                         type: array
                         items: { $ref: "#/components/schemas/MemberDetail" }
 
+  /families/{familyId}/tasks/stats:
+    get:
+      tags: [Family]
+      summary: 家庭任务统计
+      description: 获取每个成员的当前待办数和本周完成数（轻量公平感）
+      parameters:
+        - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: 统计数据
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data: { $ref: "#/components/schemas/FamilyStatsResponse" }
+
   /families/{familyId}/invitations:
     post:
       tags: [Family]
@@ -490,6 +644,7 @@ paths:
     post:
       tags: [Task]
       summary: 创建任务
+      description: ORGANIZER 或 MEMBER 可创建；CHILD 默认不可创建
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -512,9 +667,12 @@ paths:
     get:
       tags: [Task]
       summary: 任务列表
+      description: 支持按状态、执行人、逾期/临近到期筛选 + 分页
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
-        - { name: status, in: query, schema: { type: string, enum: [PENDING_COMPLETION, PENDING_VERIFICATION, COMPLETED] } }
+        - { name: status, in: query, schema: { type: string, enum: [PENDING_COMPLETION, PENDING_VERIFICATION, REJECTED, COMPLETED, CANCELLED] } }
+        - { name: overdue, in: query, schema: { type: boolean }, description: 筛选已逾期任务 }
+        - { name: nearExpiry, in: query, schema: { type: boolean }, description: 筛选临近到期任务 }
         - { name: assignedTo, in: query, schema: { type: string, format: uuid } }
         - { name: page, in: query, schema: { type: integer, default: 1 } }
         - { name: pageSize, in: query, schema: { type: integer, default: 20, maximum: 50 } }
@@ -556,6 +714,7 @@ paths:
     patch:
       tags: [Task]
       summary: 编辑任务
+      description: 仅 ORGANIZER 可编辑
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -581,17 +740,15 @@ paths:
     post:
       tags: [Task]
       summary: 标记任务完成
-      description: 执行人标记任务完成，可附带照片凭证
+      description: 执行人标记任务完成，可附带备注和照片URL。无需验收的任务直接进入COMPLETED，需要验收的进入PENDING_VERIFICATION。
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              type: object
-              properties:
-                photo: { type: string, format: binary, description: "完成照片（可选，最大5MB）" }
+              $ref: "#/components/schemas/CompleteTaskRequest"
       responses:
         "200":
           description: 标记完成
@@ -606,14 +763,19 @@ paths:
                         type: object
                         properties:
                           id: { type: string, format: uuid }
-                          status: { type: string, example: "PENDING_VERIFICATION" }
+                          status:
+                            type: string
+                            enum: [COMPLETED, PENDING_VERIFICATION]
+                            description: needsVerification=false→COMPLETED, true→PENDING_VERIFICATION
                           completedAt: { type: string, format: date-time }
+                          completionNote: { type: string, nullable: true }
                           completionPhoto: { type: string, nullable: true }
 
   /families/{familyId}/tasks/{taskId}/verify:
     post:
       tags: [Task]
       summary: 验收通过
+      description: 仅 ORGANIZER 可操作
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -639,6 +801,7 @@ paths:
     post:
       tags: [Task]
       summary: 驳回任务
+      description: 仅 ORGANIZER 可操作，驳回原因必填，任务进入 REJECTED 状态
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -662,13 +825,14 @@ paths:
                         type: object
                         properties:
                           id: { type: string, format: uuid }
-                          status: { type: string, example: "PENDING_COMPLETION" }
+                          status: { type: string, example: "REJECTED" }
                           rejectionReason: { type: string }
 
   /families/{familyId}/tasks/{taskId}/cancel:
     post:
       tags: [Task]
       summary: 取消任务
+      description: ORGANIZER 可取消任何任务，MEMBER 仅可取消自己创建的任务
       parameters:
         - { name: familyId, in: path, required: true, schema: { type: string, format: uuid } }
         - { name: taskId, in: path, required: true, schema: { type: string, format: uuid } }
@@ -693,6 +857,32 @@ paths:
                           id: { type: string, format: uuid }
                           status: { type: string, example: "CANCELLED" }
                           cancelledAt: { type: string, format: date-time }
+                          cancelledReason: { type: string, nullable: true }
+
+  # ── Template ──
+  /task-templates:
+    get:
+      tags: [Template]
+      summary: 获取任务模板列表
+      description: 获取内置任务模板，用于快速创建常见家务任务
+      parameters:
+        - { name: category, in: query, schema: { type: string }, description: 按分类筛选（可选） }
+      responses:
+        "200":
+          description: 模板列表
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          templates:
+                            type: array
+                            items: { $ref: "#/components/schemas/TaskTemplateItem" }
 
   # ── Upload ──
   /upload/image:

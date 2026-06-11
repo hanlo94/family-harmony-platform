@@ -1,9 +1,9 @@
 # 系统架构设计文档
 
 **版本**：v1.1  
-**日期**：2026-06-10  
+**日期**：2026-06-11  
 **依赖**：[requirements.md](./requirements.md)  
-**变更**：v1.1 - 前端方案从 Next.js 切换为 Vue3 + uni-app
+**变更**：v1.1 - 前端方案从 Next.js 切换为 Vue3 + uni-app；同步 requirements.md v1.1 新增模板模块、重复任务生成、提醒开关、首页兜底机制；更新任务生命周期状态机
 
 ---
 
@@ -33,7 +33,7 @@
 │   微信小程序         │         │ • 微信模板消息                  │
 │ • Pinia 状态管理     │         │ • 文件上传 (图片)              │
 │ • uview-plus /      │         │ • Prisma ORM                  │
-│   uni-ui 组件       │         │                               │
+│   uni-ui 组件       │         │ • 定时任务 (提醒+重复任务生成)  │
 │ • SCSS + CSS vars   │         │                               │
 └────────────────────┘         └───────────────┬───────────────┘
                                                │
@@ -119,7 +119,7 @@
 | **文件存储** | 本地文件系统（后期迁 OSS） | MVP 简单优先，照片量不大 |
 | **API 文档** | Swagger (NestJS OpenAPI) | 自动生成，前后端共享 |
 | **验证** | class-validator + class-transformer | NestJS 原生方案 |
-| **定时任务** | @nestjs/schedule | 任务到期提醒的定时检查 |
+| **定时任务** | @nestjs/schedule | 任务到期提醒 + 重复任务生成 |
 
 ### 2.4 共享基础设施
 
@@ -155,21 +155,25 @@ apps/backend/src/
 │   └── dto/
 ├── user/                    # 用户模块
 │   ├── user.module.ts
-│   ├── user.controller.ts   # 用户信息 CRUD
+│   ├── user.controller.ts   # 用户信息 CRUD、提醒设置读写
 │   └── user.service.ts
 ├── family/                  # 家庭模块
 │   ├── family.module.ts
-│   ├── family.controller.ts # 创建家庭、成员管理、邀请
+│   ├── family.controller.ts # 创建家庭、成员管理、邀请、任务统计
 │   ├── family.service.ts
 │   └── dto/
 ├── task/                    # 任务模块（核心）
 │   ├── task.module.ts
-│   ├── task.controller.ts   # 任务 CRUD、分配、验收
-│   ├── task.service.ts
+│   ├── task.controller.ts   # 任务 CRUD、分配、验收、驳回、完成
+│   ├── task.service.ts      # 状态机流转、重复任务生成逻辑
 │   └── dto/
+├── template/                # 模板模块 🆕
+│   ├── template.module.ts
+│   ├── template.controller.ts # 获取内置任务模板列表
+│   └── template.service.ts
 ├── notification/            # 通知模块
 │   ├── notification.module.ts
-│   ├── notification.service.ts     # 微信模板消息
+│   ├── notification.service.ts     # 微信模板消息（含提醒开关检查）
 │   └── notification.scheduler.ts   # 定时检查到期任务
 ├── upload/                  # 文件上传模块
 │   ├── upload.module.ts
@@ -192,34 +196,40 @@ apps/frontend/
 │   ├── uni.scss                   # 全局 SCSS 变量
 │   │
 │   ├── pages/                     # 页面（按功能分组）
-│   │   ├── index/                 # 首页 — 任务列表
+│   │   ├── index/                 # 首页 — 任务列表（含逾期/临近到期专区）
 │   │   │   └── index.vue
 │   │   ├── task/                  # 任务相关页面
-│   │   │   ├── detail.vue         # 任务详情
-│   │   │   ├── create.vue         # 创建任务
+│   │   │   ├── detail.vue         # 任务详情（含驳回原因展示）
+│   │   │   ├── create.vue         # 创建任务（模板选择 → 表单）
 │   │   │   └── verify.vue         # 验收任务
 │   │   ├── family/                # 家庭相关页面
-│   │   │   ├── index.vue          # 家庭管理页
+│   │   │   ├── index.vue          # 家庭管理页（含轻量统计）
 │   │   │   ├── invite.vue         # 邀请成员
 │   │   │   └── join.vue           # 加入家庭
 │   │   ├── profile/               # 个人中心
-│   │   │   └── index.vue
+│   │   │   ├── index.vue          # 个人资料
+│   │   │   └── settings.vue       # 提醒设置 🆕
 │   │   └── login/                 # 登录页
 │   │       └── index.vue
 │   │
 │   ├── components/                # 公共组件
 │   │   ├── task/
-│   │   │   ├── TaskCard.vue       # 任务卡片
+│   │   │   ├── TaskCard.vue       # 任务卡片（含逾期/临近到期标记）
 │   │   │   ├── TaskList.vue       # 任务列表
-│   │   │   ├── TaskForm.vue       # 任务表单
-│   │   │   └── TaskFilter.vue     # 任务筛选项
+│   │   │   ├── TaskForm.vue       # 任务表单（含重复规则+验收开关）
+│   │   │   ├── TaskFilter.vue     # 任务筛选项
+│   │   │   ├── TemplateSelector.vue # 模板选择器 🆕
+│   │   │   ├── RepeatRulePicker.vue # 重复规则选择器 🆕
+│   │   │   └── VerificationToggle.vue # 验收开关组件 🆕
 │   │   ├── family/
 │   │   │   ├── MemberList.vue     # 成员列表
+│   │   │   ├── MemberStatsCard.vue  # 成员统计卡片 🆕
 │   │   │   └── InviteCard.vue     # 邀请卡片
 │   │   └── common/
 │   │       ├── AuthGuard.vue      # 登录守卫
 │   │       ├── EmptyState.vue     # 空状态
-│   │       └── LoadingMore.vue    # 加载更多
+│   │       ├── LoadingMore.vue    # 加载更多
+│   │       └── OverdueBanner.vue  # 逾期/临近到期横条 🆕
 │   │
 │   ├── composables/               # Composition API (替代 React Hooks)
 │   │   ├── useAuth.ts             # 认证逻辑
@@ -228,7 +238,7 @@ apps/frontend/
 │   │   └── useUpload.ts           # 图片上传
 │   │
 │   ├── stores/                    # Pinia 状态管理
-│   │   ├── user.ts                # 用户信息、Token
+│   │   ├── user.ts                # 用户信息、Token、提醒设置
 │   │   ├── family.ts              # 当前家庭、成员列表
 │   │   └── task.ts                # 任务列表缓存
 │   │
@@ -237,6 +247,7 @@ apps/frontend/
 │   │   ├── auth.ts                # 认证接口
 │   │   ├── task.ts                # 任务接口
 │   │   ├── family.ts              # 家庭接口
+│   │   ├── template.ts            # 模板接口 🆕
 │   │   └── upload.ts              # 上传接口
 │   │
 │   ├── utils/                     # 工具函数
@@ -266,6 +277,7 @@ apps/frontend/
     { "path": "pages/family/invite", "style": { "navigationBarTitleText": "邀请成员" } },
     { "path": "pages/family/join", "style": { "navigationBarTitleText": "加入家庭" } },
     { "path": "pages/profile/index", "style": { "navigationBarTitleText": "我的" } },
+    { "path": "pages/profile/settings", "style": { "navigationBarTitleText": "提醒设置" } },
     { "path": "pages/login/index", "style": { "navigationBarTitleText": "登录" } }
   ],
   "globalStyle": { "navigationBarBackgroundColor": "#4CAF50", "navigationBarTextStyle": "white" },
@@ -284,18 +296,20 @@ apps/frontend/
 pages/login/index  ←── 未登录时的入口
         │
         ▼ (登录成功)
-pages/index/index  ←── TabBar 首页 (任务列表)
+pages/index/index  ←── TabBar 首页 (任务列表 + 逾期/临近到期专区)
    │        │
-   │        ├──→ pages/task/detail    (点任务卡片)
+   │        ├──→ pages/task/detail    (点任务卡片，含驳回原因展示)
    │        │       └──→ pages/task/verify  (组织者验收)
-   │        └──→ pages/task/create    (创建任务)
+   │        └──→ pages/task/create    (创建任务: 模板选择→表单)
    │
-pages/family/index  ←── TabBar (家庭管理)
+pages/family/index  ←── TabBar (家庭管理 + 轻量统计)
    │
    ├──→ pages/family/invite   (邀请成员)
    └──→ pages/family/join     (被邀请者加入)
    │
 pages/profile/index  ←── TabBar (个人中心)
+   │
+   └──→ pages/profile/settings  (提醒设置) 🆕
 ```
 
 ---
@@ -337,32 +351,52 @@ pages/profile/index  ←── TabBar (个人中心)
      前端存储 Token → 进入应用
 ```
 
-### 5.2 任务生命周期
+### 5.2 任务生命周期（v1.1 更新）
 
 ```
-┌──────────┐    创建     ┌──────────┐    执行    ┌──────────┐
-│ 待分配    │ ───────→   │ 待完成    │ ───────→  │ 待验收    │
-└──────────┘            └──────────┘           └──────────┘
-                                                    │
-                                      ┌─────────────┼──────────────┐
-                                      ▼                           ▼
-                                 验收通过                      验收驳回
-                                      │                           │
-                                      ▼                           ▼
-                                ┌──────────┐               ┌──────────┐
-                                │ 已完成    │               │ 待完成    │
-                                └──────────┘               │ (附驳回原因)│
-                                                           └──────────┘
+┌──────────┐   创建+分配  ┌──────────┐   成员完成    ┌──────────┐
+│ 待完成    │ ──────────→ │ 待完成    │ ────────────→│ 待验收    │
+│ (初始)    │             │ (执行中)  │              │ (需验收)  │
+└──────────┘             └─────┬────┘              └────┬─────┘
+                               │                        │
+                               │                        │
+                    ┌──────────┼──────────┐    ┌────────┼────────┐
+                    │          │          │    │        │        │
+                    ▼          ▼          ▼    ▼        ▼        ▼
+               ┌────────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+               │ 已完成  │ │临近到期│ │已逾期 │ │已完成 │ │已驳回 │ │已取消 │
+               │(无需验收)│ │(计算) │ │(计算) │ │(验收通过)│      │ │      │
+               └────────┘ └──────┘ └──────┘ └──────┘ └──┬───┘ └──────┘
+                                                        │
+                                                        ▼
+                                                  ┌──────────┐
+                                                  │ 执行人    │
+                                                  │ 重新提交  │
+                                                  └──────────┘
 ```
 
 状态说明：
-- **待分配**：任务已创建但未指定执行人
-- **待完成**：已分配，等待执行人完成
-- **待验收**：执行人已标记完成（可附照片），等待组织者确认
-- **已完成**：组织者已验收通过
-- 组织者可**取消**任意非终态的任务
+- **待完成（PENDING_COMPLETION）**：任务已创建并分配执行人，执行人需要处理
+- **临近到期**：系统计算状态（deadline 在未来 1 小时内），用于首页提醒兜底，不独立存储
+- **已逾期**：系统计算状态（deadline 已过且未完成），用于首页提醒兜底，不独立存储
+- **待验收（PENDING_VERIFICATION）**：执行人已标记完成且任务需要验收，等待组织者确认
+- **已完成（COMPLETED）**：终态。无需验收的任务直接进入；需要验收的任务经组织者通过后进入
+- **已驳回（REJECTED）**：组织者驳回任务，包含驳回原因；执行人需要重新处理，重新提交后回到待验收
+- **已取消（CANCELLED）**：终态。组织者或（任务创建者本人）取消
 
-### 5.3 微信提醒流程
+状态流转规则：
+```
+PENDING_COMPLETION → COMPLETED（needs_verification=false，成员完成）
+PENDING_COMPLETION → PENDING_VERIFICATION（needs_verification=true，成员完成）
+PENDING_COMPLETION → CANCELLED（取消）
+PENDING_VERIFICATION → COMPLETED（验收通过）
+PENDING_VERIFICATION → REJECTED（驳回，必填原因）
+PENDING_VERIFICATION → CANCELLED（取消）
+REJECTED → PENDING_COMPLETION（执行人重新提交后进入待验收）
+REJECTED → CANCELLED（取消）
+```
+
+### 5.3 微信提醒流程（v1.1 更新）
 
 ```
 后端定时任务 (@Cron, 每10分钟)
@@ -374,12 +408,77 @@ pages/profile/index  ←── TabBar (个人中心)
 按用户分组去重
     │
     ▼
-调用微信模板消息 API 发送
-POST https://api.weixin.qq.com/cgi-bin/message/template/send
+JOIN family_members 检查 reminder_enabled 字段
+    │
+    ├── reminder_enabled = false ──→ 跳过该用户
+    │
+    └── reminder_enabled = true
+        │
+        ▼
+    调用微信模板消息 API 发送
+    POST https://api.weixin.qq.com/cgi-bin/message/template/send
+        │
+        ▼
+    标记任务 has_notified = true
+```
+
+### 5.4 首页提醒兜底机制 🆕
+
+当微信提醒不可用或用户未收到时，首页通过以下方式作为提醒兜底：
+
+```
+用户打开首页 (GET /api/families/:familyId/tasks)
+    │
+    ├── 查询 assigned_to = 当前用户
+    │     AND status = 'PENDING_COMPLETION'
     │
     ▼
-标记任务 has_notified = true
+后端计算两个派生状态
+    │
+    ├── deadline BETWEEN NOW() AND NOW()+1h  → isNearExpiry = true (临近到期)
+    └── deadline < NOW()                     → isOverdue = true (已逾期)
+    │
+    ▼
+前端根据计算状态渲染
+    │
+    ├── 已逾期任务 → 置顶展示，红色标记 / Rose 色背景，突出"已逾期 X 小时"
+    └── 临近到期 → 紧随其后，橙色标记 / Honey 色背景，显示"即将到期"
 ```
+
+### 5.5 重复任务生成流程 🆕
+
+```
+后端定时任务 (@Cron, 每小时)
+    │
+    ▼
+查询已完成的重复任务
+  SELECT * FROM tasks
+  WHERE status = 'COMPLETED'
+    AND repeat_rule != 'NONE'
+    AND NOT EXISTS (已生成的下一期任务)
+    │
+    ▼
+按 repeat_rule 计算下一次 deadline
+    │
+    ├── DAILY  → deadline + 1 day
+    └── WEEKLY → deadline + 7 days
+    │
+    ▼
+生成新任务（继承原任务属性）
+    │
+    ├── title, description, difficulty（继承）
+    ├── assigned_to（继承原执行人）
+    ├── needs_verification（继承）
+    ├── repeat_rule（继承）
+    ├── status = PENDING_COMPLETION
+    ├── has_notified = FALSE
+    └── created_by = 原任务创建者
+```
+
+MVP 只支持三种重复规则：
+- **NONE**：不重复
+- **DAILY**：每天（deadline + 1 天）
+- **WEEKLY**：每周（deadline + 7 天）
 
 ---
 
@@ -406,6 +505,7 @@ POST https://api.weixin.qq.com/cgi-bin/message/template/send
 │                              Service                 │
 │                              │    │                 │
 │                         Prisma    upload/notification│
+│                         /template                    │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -467,6 +567,9 @@ GitHub Actions
 | **SQL 注入** | Prisma 参数化查询，天然防护 |
 | **XSS** | Vue3 默认转义（v-text/v-bind）+ CSP Header |
 | **CSRF** | SameSite Cookie + JWT 仅存在内存/localStorage（不做 Cookie 传递） |
+| **多家庭隔离** | 所有家庭、任务、成员接口必须校验用户是否属于对应家庭 |
+| **邀请安全** | 邀请链接/二维码包含有效期，过期后不能加入 |
+| **照片安全** | 仅家庭成员可见，限制图片类型、大小和数量，文件名随机化 |
 
 ---
 
@@ -483,3 +586,9 @@ GitHub Actions
 | 7 | 文件存储 | 本地文件系统 | 阿里云 OSS | MVP 简单优先，后期可迁移 |
 | 8 | 部署 | Docker Compose 单机 | Kubernetes | MVP 用户量小，单机足够 |
 | 9 | 跨端策略 | H5 先行 → 小程序跟进 | 同时上线 | H5 无需审核快速验证，小程序条件编译按需启用 |
+| 10 | **任务状态** | 移除"待分配"状态 | v1.0 的 PENDING_ASSIGNMENT | requirements.md v1.1 要求任务必须归属执行人，简化状态机 |
+| 11 | **验收开关** | 任务级 needs_verification 字段 | 全局开关 | 允许不同任务采用不同完成规则（普通任务无需验收，关键任务需要验收） |
+| 12 | **重复任务** | 定时扫描 COMPLETED + repeat_rule → 生成新实例 | 预生成所有实例 | 预生成会导致大量未来任务数据；按需生成更灵活，支持修改重复规则 |
+| 13 | **提醒开关** | family_members.reminder_enabled | 独立 notification_settings 表 | 开关与家庭成员关系绑定，按家庭+用户维度，查询简单 |
+| 14 | **首页兜底** | 查询时动态计算 isOverdue / isNearExpiry | 定时任务标记状态 | 避免状态同步延迟，查询时实时计算更准确 |
+| 15 | **驳回状态** | REJECTED 作为独立状态 | 回到 PENDING_COMPLETION + rejection_reason | 明确区分初次待完成和被驳回后重新处理，便于 UI 区分展示和统计 |
