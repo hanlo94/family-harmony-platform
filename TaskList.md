@@ -82,7 +82,7 @@
 4. `apps/backend/src/*/dto/` 后端 DTO 和 Validation（含 v1.1 新增字段）
 
 **子任务**：
-- [ ] C06-1：初始化 NestJS 后端项目骨架（apps/backend）
+- [x] C06-1：初始化 NestJS 后端项目骨架（apps/backend）
 - [ ] C06-2：初始化 uni-app 前端项目骨架（apps/frontend）
 - [ ] C06-3：实现共享类型定义文件（API 请求/响应类型，含 v1.1 新增）
 - [ ] C06-4：实现前端 API 请求封装层（uni.request 拦截器）
