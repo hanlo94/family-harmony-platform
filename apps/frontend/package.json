@@ -11,7 +11,8 @@
     "build:h5": "uni build",
     "build:mp-weixin": "uni build -p mp-weixin",
     "typecheck": "vue-tsc --noEmit",
-    "lint": "eslint \"src/**/*.{ts,vue}\""
+    "lint": "eslint \"src/**/*.{ts,vue}\"",
+    "generate:types": "openapi-typescript ../../specs/openapi.yaml -o src/types/api.ts"
   },
   "dependencies": {
     "@dcloudio/uni-app": "3.0.0-4080420251103001",
@@ -41,6 +42,7 @@
     "@dcloudio/uni-stacktracey": "3.0.0-4080420251103001",
     "@dcloudio/vite-plugin-uni": "3.0.0-4080420251103001",
     "@vue/runtime-core": "^3.4.21",
+    "openapi-typescript": "^7.4.0",
     "sass": "^1.77.0",
     "typescript": "^5.1.3",
     "vite": "5.2.8",
