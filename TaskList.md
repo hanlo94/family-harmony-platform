@@ -54,7 +54,7 @@
 
 | 编号 | 任务 | 产出物 | 状态 |
 |------|------|--------|------|
-| C06 | 前后端契约 | 共享类型定义 + 前端 API 封装 + 后端 DTO | ⬜ |
+| C06 | 前后端契约 | 共享类型定义 + 前端 API 封装 + 后端 DTO | ✅ |
 | C07 | 任务清单 | TaskList.md（本文件） | 🔄 |
 | C08 | 测试案例 | `docs/test-plan.md` + 测试配置 | ⬜ |
 | C09 | 文档门禁 | GitHub Actions CI + pre-commit hook | ⬜ |
@@ -86,7 +86,7 @@
 - [x] C06-2：初始化 uni-app 前端项目骨架（apps/frontend）
 - [x] C06-3：实现共享类型定义文件（API 请求/响应类型，含 v1.1 新增）
 - [x] C06-4：实现前端 API 请求封装层（uni.request 拦截器）
-- [ ] C06-5：实现后端 DTO + class-validator 校验
+- [x] C06-5：实现后端 DTO + class-validator 校验
 
 ---
 
