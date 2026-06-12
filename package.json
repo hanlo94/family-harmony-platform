@@ -10,7 +10,24 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.vue": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.scss": [
+      "prettier --write"
+    ],
+    "*.{json,md,yaml}": [
+      "prettier --write"
+    ]
   },
   "engines": {
     "node": ">=20",
@@ -30,6 +47,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
     "playwright": "^1.60.0",
     "prisma": "5.22.0"
   },

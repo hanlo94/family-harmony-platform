@@ -57,7 +57,7 @@
 | C06 | 前后端契约 | 共享类型定义 + 前端 API 封装 + 后端 DTO | ✅ |
 | C07 | 任务清单 | TaskList.md（本文件） | 🔄 |
 | C08 | 测试案例 | `docs/test-plan.md` + 测试配置 | ✅ |
-| C09 | 文档门禁 | GitHub Actions CI + pre-commit hook | ⬜ |
+| C09 | 文档门禁 | GitHub Actions CI + pre-commit hook | ✅ |
 
 ---
 
@@ -124,10 +124,10 @@
 3. ESLint + Prettier 配置（后端 + 前端）
 
 **子任务**：
-- [ ] C09-1：编写 GitHub Actions CI 配置（lint → typecheck → test）
-- [ ] C09-2：配置 ESLint + Prettier（后端 NestJS）
-- [ ] C09-3：配置 ESLint + Prettier（前端 uni-app Vue3）
-- [ ] C09-4：配置 Husky pre-commit hook
+- [x] C09-1：编写 GitHub Actions CI 配置（lint → typecheck → test）
+- [x] C09-2：配置 ESLint + Prettier（后端 NestJS）
+- [x] C09-3：配置 ESLint + Prettier（前端 uni-app Vue3）
+- [x] C09-4：配置 Husky pre-commit hook
 
 ---
 
@@ -209,8 +209,8 @@ C06（前后端契约）→ C08（测试案例）→ C09（文档门禁）
 ```
 v1.1 设计同步   ████████████████████  7/7  100%
 阶段一：设计阶段 ████████████████████  6/6  100%
-阶段二：流水线构建 █████████████░░░░░░░  3/4   75%
+阶段二：流水线构建 ████████████████████  4/4  100%
 阶段三：手动开发   ░░░░░░░░░░░░░░░░░░░░  0/2    0%
 ───────────────────────────────────────────────
-总计：             ██████░░░░░░░░░░░░░░ 14/19  74%
+总计：             ██████████░░░░░░░░░░ 17/19  89%
 ```
