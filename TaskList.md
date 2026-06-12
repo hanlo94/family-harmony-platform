@@ -83,7 +83,7 @@
 
 **子任务**：
 - [x] C06-1：初始化 NestJS 后端项目骨架（apps/backend）
-- [ ] C06-2：初始化 uni-app 前端项目骨架（apps/frontend）
+- [x] C06-2：初始化 uni-app 前端项目骨架（apps/frontend）
 - [ ] C06-3：实现共享类型定义文件（API 请求/响应类型，含 v1.1 新增）
 - [ ] C06-4：实现前端 API 请求封装层（uni.request 拦截器）
 - [ ] C06-5：实现后端 DTO + class-validator 校验

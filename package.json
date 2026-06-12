@@ -19,9 +19,13 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "@nestjs/core",
+      "@parcel/watcher",
       "@prisma/client",
       "@prisma/engines",
-      "prisma"
+      "core-js",
+      "esbuild",
+      "prisma",
+      "vue-demi"
     ]
   },
   "devDependencies": {
