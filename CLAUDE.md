@@ -32,7 +32,7 @@
 - **数据库表**：snake_case 复数（如 `family_tasks`）
 - **API 路由**：RESTful（如 `/api/families/:familyId/tasks`）
 - **Git 分支**：`feature/功能描述`、`fix/问题描述`
-- **Commit**：Conventional Commits（`feat:`, `fix:`, `docs:`, `refactor:`）
+- **Commit**：中文提交说明，格式 `feat(模块): <描述>`
 
 ## 当前项目状态
 
@@ -72,14 +72,17 @@
 3. **不要重复已完成的任务**（已勾选 `[x]` 的跳过）
 4. 每完成一个子任务：
    a. 在 TaskList.md 中勾选：`- [ ]` → `- [x]`
-   b. `git add -A && git commit -m "chore: complete <编号> — <描述>"`
+   b. 提交（使用中文提交说明）
 5. 如果上下文不足，读取上方"设计文档索引"中的相关文档
 
 ### 提交规范
 
-- 阶段二的提交统一使用 `chore:` 前缀
-- 格式：`chore: complete <编号> — <子任务描述>`
-- 示例：`chore: complete C06-1 — init NestJS backend skeleton`
+- 提交说明使用**中文**
+- 格式：`feat(模块): <中文描述>`
+- 示例：
+  - `feat(backend): 完成后端骨架 — PrismaModule、全局过滤器、守卫、装饰器`
+  - `feat(frontend): 完成前端骨架 — Pinia 注册、Design Token 注入、TabBar 图标`
+  - `feat(backend): 完成 Auth 模块 — JWT 认证、微信 OAuth、三角色权限守卫`
 - 每个子任务完成后立即提交，**不要积攒多个子任务一起提交**
 
 ### 验证命令
