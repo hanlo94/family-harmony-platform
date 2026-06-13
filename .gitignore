@@ -36,6 +36,9 @@ prisma/migrations/*/migration_lock.toml
 coverage/
 .nyc_output/
 
+# Claude Code
+.claude/settings.local.json
+
 # Misc
 *.pem
 debug.log
