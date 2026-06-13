@@ -4,6 +4,7 @@
   "private": true,
   "description": "家庭共享任务与无唠叨协作平台",
   "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"pnpm dev:backend\" \"pnpm dev:frontend\"",
     "dev:frontend": "cd apps/frontend && pnpm dev",
     "dev:backend": "cd apps/backend && pnpm dev",
     "build": "pnpm -r build",
@@ -47,6 +48,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
+    "concurrently": "^10.0.3",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "playwright": "^1.60.0",
