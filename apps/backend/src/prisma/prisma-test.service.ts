@@ -13,7 +13,8 @@ export class PrismaTestService extends PrismaClient implements OnModuleInit, OnM
     super({
       datasources: {
         db: {
-          url: process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/family_harmony_test',
+          url:
+            process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/family_harmony_test',
         },
       },
     });
@@ -34,9 +35,9 @@ export class PrismaTestService extends PrismaClient implements OnModuleInit, OnM
     >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
 
     const tables = tablenames
-      .map(({ tablename }) => tablename)
-      .filter((name) => name !== '_prisma_migrations')
-      .map((name) => `"public"."${name}"`)
+      .map(({ tablename }: { tablename: string }) => tablename)
+      .filter((name: string) => name !== '_prisma_migrations')
+      .map((name: string) => `"public"."${name}"`)
       .join(', ');
 
     if (tables.length === 0) return;
