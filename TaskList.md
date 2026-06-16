@@ -172,7 +172,7 @@
 | C02-1  | 项目骨架          | NestJS 初始化、Prisma 连接、环境变量、全局异常过滤器、日志拦截器                                                                                                                   | 0.5天 | ✅   |
 | C02-2  | Prisma 模块       | Prisma Service 封装、数据库连接、migration 执行（含 v1.1 schema）、seed 数据（含模板）                                                                                             | 0.5天 | ✅   |
 | C02-3  | Auth 模块         | JWT Strategy、微信 OAuth（H5 + 小程序）、Token 签发/刷新、Guard（三角色权限）                                                                                                      | 2天   | ✅   |
-| C02-4  | User 模块         | 用户信息 CRUD、微信资料同步、提醒设置读写                                                                                                                                          | 0.5天 | ⬜   |
+| C02-4  | User 模块         | 用户信息 CRUD、微信资料同步、提醒设置读写                                                                                                                                          | 0.5天 | ✅   |
 | C02-5  | Family 模块       | 创建家庭、成员管理（三角色）、邀请码生成/验证、加入/移除成员、任务统计接口                                                                                                         | 1.5天 | ⬜   |
 | C02-6  | Task 模块         | 任务 CRUD、状态机流转（v1.1: PENDING_COMPLETION↔PENDING_VERIFICATION↔REJECTED↔COMPLETED↔CANCELLED）、重复任务不存储计算状态、完成验收/驳回、取消（含权限：ORGANIZER+MEMBER创建者） | 3天   | ⬜   |
 | C02-7  | Template 模块     | 模板列表查询、按分类筛选 🆕                                                                                                                                                        | 0.5天 | ⬜   |
