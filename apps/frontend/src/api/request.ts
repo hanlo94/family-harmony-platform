@@ -48,11 +48,11 @@ export function clearTokens() {
 async function tryRefreshToken(): Promise<boolean> {
   if (!refreshTokenValue) return false;
   try {
-    const [err, res] = await uni.request({
+    const [err, res] = (await uni.request({
       url: `${BASE_URL}/auth/refresh`,
       method: 'POST',
       data: { refreshToken: refreshTokenValue },
-    });
+    })) as unknown as [UniApp.UniError | undefined | null, UniApp.RequestSuccessCallbackResult];
     if (err || res.statusCode !== 200) return false;
     const body = res.data as ApiResponse<components['schemas']['RefreshResponse']>;
     if (body.data?.accessToken) {
@@ -81,11 +81,11 @@ export async function apiRequest<T = unknown>(
     headers['Authorization'] = `Bearer ${accessToken}`;
   }
 
-  const [err, res] = await uni.request({
+  const [err, res] = (await uni.request({
     ...options,
     url: fullUrl,
     header: headers,
-  });
+  })) as unknown as [UniApp.UniError | undefined | null, UniApp.RequestSuccessCallbackResult];
 
   if (err) {
     return { data: null, error: { code: -1, message: '网络请求失败', detail: err.errMsg } };
@@ -97,11 +97,11 @@ export async function apiRequest<T = unknown>(
     if (refreshed) {
       // Retry with new token
       headers['Authorization'] = `Bearer ${accessToken}`;
-      const [retryErr, retryRes] = await uni.request({
+      const [retryErr, retryRes] = (await uni.request({
         ...options,
         url: fullUrl,
         header: headers,
-      });
+      })) as unknown as [UniApp.UniError | undefined | null, UniApp.RequestSuccessCallbackResult];
       if (retryErr) {
         return { data: null, error: { code: -1, message: '网络请求失败', detail: retryErr.errMsg } };
       }
@@ -135,7 +135,7 @@ export const api = {
     return apiRequest<T>(url, { method: 'POST', data });
   },
   patch<T = unknown>(url: string, data?: Record<string, unknown>) {
-    return apiRequest<T>(url, { method: 'PATCH', data });
+    return apiRequest<T>(url, { method: 'PATCH' as UniApp.RequestOptions['method'], data });
   },
   delete<T = unknown>(url: string, data?: Record<string, unknown>) {
     return apiRequest<T>(url, { method: 'DELETE', data });

@@ -1,0 +1,139 @@
+/**
+ * Design Token CSS 变量
+ *
+ * 基于 UI 设计文档 v1.1 §2 Design Token 系统
+ * 配色方案："Sunlit Kitchen Garden"
+ *
+ * 使用方式：
+ *   color: var(--color-primary);
+ *   padding: var(--space-lg);
+ *   font-family: var(--font-body);
+ */
+
+:root {
+  /* ========================================
+     配色 — "Sunlit Kitchen Garden"
+     ======================================== */
+
+  /* 主色：导航栏、主按钮、图标、Tab 选中态 */
+  --color-primary: #3d6b5a;
+
+  /* 强调/CTA：创建任务按钮、重要操作 */
+  --color-accent: #e8a87c;
+
+  /* 高亮/星级：难度星级、徽章、签到高亮、临近到期标记 */
+  --color-honey: #f4d35e;
+
+  /* 完成/成功：已完成状态、成功 Toast、进度条 */
+  --color-moss: #8cb89f;
+
+  /* 页面背景 */
+  --color-bg: #f9f8f4;
+
+  /* 卡片/列表项背景 */
+  --color-surface: #f5ede4;
+
+  /* 正文文字 */
+  --color-text: #1a1a1a;
+
+  /* 次要文字、时间戳 */
+  --color-text-secondary: #6b6b6b;
+
+  /* 错误提示、驳回标签、逾期标记 */
+  --color-rose: #e8a4a0;
+
+  /* 逾期任务卡片背景 */
+  --color-overdue-bg: #fdf0ef;
+
+  /* 临近到期任务卡片背景 */
+  --color-near-expiry-bg: #fffbf0;
+
+  /* 分割线、边框 */
+  --color-border: #e8e3dc;
+
+  /* 纯白卡片、输入框背景 */
+  --color-white: #ffffff;
+
+  /* ========================================
+     字体
+     ======================================== */
+
+  /* 中文字体栈 */
+  --font-body: -apple-system, 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+
+  /* 数字/英文显示字体（时间、计数、难度数字） */
+  --font-display: 'SF Pro Rounded', 'DIN Alternate', -apple-system,
+    'PingFang SC', sans-serif;
+
+  /* ========================================
+     字号
+     ======================================== */
+
+  /* 页面标题 */
+  --font-size-h1: 22px;
+  --font-weight-h1: 700;
+
+  /* 区块标题 */
+  --font-size-h2: 18px;
+  --font-weight-h2: 600;
+
+  /* 正文、任务标题 */
+  --font-size-body: 16px;
+  --font-weight-body: 400;
+
+  /* 辅助信息、时间、成员名 */
+  --font-size-caption: 13px;
+
+  /* 标签、徽章 */
+  --font-size-small: 11px;
+  --font-weight-small: 500;
+
+  /* ========================================
+     间距（基于 4px 栅格）
+     ======================================== */
+
+  /* 图标与文字间距 */
+  --space-xs: 4px;
+
+  /* 标签内边距 */
+  --space-sm: 8px;
+
+  /* 列表项内边距 */
+  --space-md: 12px;
+
+  /* 卡片内边距、页面水平边距 */
+  --space-lg: 16px;
+
+  /* 区块间距 */
+  --space-xl: 20px;
+
+  /* 页面顶部/底部留白 */
+  --space-2xl: 24px;
+
+  /* ========================================
+     圆角
+     ======================================== */
+
+  /* 标签、徽章、小按钮 */
+  --radius-sm: 6px;
+
+  /* 卡片、列表项、输入框 */
+  --radius-md: 10px;
+
+  /* 大按钮（主 CTA） */
+  --radius-lg: 14px;
+
+  /* 头像、药丸形标签 */
+  --radius-full: 9999px;
+
+  /* ========================================
+     阴影
+     ======================================== */
+
+  /* 卡片浮起 */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  /* 浮动操作按钮 */
+  --shadow-fab: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
