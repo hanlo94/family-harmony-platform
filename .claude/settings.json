@@ -1,36 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git *)",
-      "Bash(pnpm *)",
-      "Bash(npx jest *)",
-      "Bash(npx tsc *)",
-      "Bash(npx eslint *)",
-      "Bash(npx prettier *)",
-      "Bash(node -e *)",
-      "Bash(Get-*)",
-      "Bash(Remove-*)",
-      "Bash(New-*)",
-      "Bash(Set-*)",
-      "Bash(Test-*)",
-      "Bash(ls *)",
-      "Bash(echo *)",
-      "Bash(dir *)",
-      "PowerShell(git *)",
-      "PowerShell(pnpm *)",
-      "PowerShell(npx jest *)",
-      "PowerShell(npx tsc *)",
-      "PowerShell(npx eslint *)",
-      "PowerShell(npx prettier *)",
-      "PowerShell(node -e *)",
-      "PowerShell(Get-*)",
-      "PowerShell(Remove-*)",
-      "PowerShell(New-*)",
-      "PowerShell(Set-*)",
-      "PowerShell(Test-*)",
-      "PowerShell(ls *)",
-      "PowerShell(echo *)",
-      "PowerShell(dir *)"
+      "Bash(*)",
+      "PowerShell(*)"
     ]
   }
 }
