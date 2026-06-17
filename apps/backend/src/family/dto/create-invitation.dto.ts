@@ -9,5 +9,5 @@ export class CreateInvitationDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  expiresInHours?: number = 24;
+  expiresInHours?: number = 72;
 }

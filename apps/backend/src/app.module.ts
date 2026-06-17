@@ -9,6 +9,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { FamilyModule } from './family/family.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserModule } from './user/user.module';
     PrismaModule,
     AuthModule,
     UserModule,
+    FamilyModule,
   ],
   controllers: [AppController],
   providers: [

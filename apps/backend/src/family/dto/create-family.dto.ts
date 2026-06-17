@@ -6,6 +6,6 @@ import { IsString, IsNotEmpty, MaxLength } from 'class-validator';
 export class CreateFamilyDto {
   @IsString()
   @IsNotEmpty()
-  @MaxLength(100)
+  @MaxLength(64)
   name: string;
 }
