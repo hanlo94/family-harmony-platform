@@ -27,6 +27,10 @@ type CancelTaskRequest = components['schemas']['CancelTaskRequest'];
 /** 任务列表查询参数 */
 export interface TaskListQuery {
   status?: string;
+  /** 筛选已逾期任务（status=PENDING_COMPLETION AND deadline < NOW()） */
+  overdue?: boolean;
+  /** 筛选临近到期任务（status=PENDING_COMPLETION AND deadline BETWEEN NOW() AND NOW()+1h） */
+  nearExpiry?: boolean;
   page?: number;
   pageSize?: number;
   assignedTo?: string;

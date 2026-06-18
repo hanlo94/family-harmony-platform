@@ -3,7 +3,10 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "家庭任务"
+        "navigationBarTitleText": "家庭任务",
+        "navigationStyle": "custom",
+        "enablePullDownRefresh": true,
+        "backgroundColor": "#F9F8F4"
       }
     },
     {
