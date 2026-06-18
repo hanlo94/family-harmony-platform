@@ -22,6 +22,7 @@ import { useFamilyStore } from '../../stores/family';
 import { getTaskDetail, verifyTask, rejectTask } from '../../api/task';
 import type { components } from '../../types/api';
 import AuthGuard from '../../components/AuthGuard.vue';
+import LoadingSpinner from '../../components/LoadingSpinner.vue';
 import { formatDateTime } from '../../utils/date';
 
 type TaskDetail = components['schemas']['TaskDetail'];
@@ -226,10 +227,10 @@ onMounted(async () => {
   <AuthGuard>
     <view class="verify-page">
       <!-- ========== 加载中 ========== -->
-      <view v-if="isLoading" class="verify-page__center">
-        <view class="verify-page__spinner" />
-        <text class="verify-page__center-text">加载中...</text>
-      </view>
+      <LoadingSpinner
+        v-if="isLoading"
+        text="加载中..."
+      />
 
       <!-- ========== 错误状态 ========== -->
       <view v-else-if="error" class="verify-page__center">
@@ -400,14 +401,6 @@ onMounted(async () => {
     color: var(--color-text-secondary);
   }
 
-  &__spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
-    border-radius: var(--radius-full);
-    animation: verify-spin 0.8s linear infinite;
-  }
 
   &__retry-btn {
     padding: var(--space-sm) var(--space-xl);
@@ -660,9 +653,5 @@ onMounted(async () => {
     display: flex;
     gap: var(--space-md);
   }
-}
-
-@keyframes verify-spin {
-  to { transform: rotate(360deg); }
 }
 </style>

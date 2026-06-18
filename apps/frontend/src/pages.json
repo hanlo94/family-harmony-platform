@@ -94,6 +94,8 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "家庭任务",
     "navigationBarBackgroundColor": "#F9F8F4",
-    "backgroundColor": "#F9F8F4"
+    "backgroundColor": "#F9F8F4",
+    "animationType": "slide-in-right",
+    "animationDuration": 300
   }
 }

@@ -32,6 +32,7 @@ import RepeatBadge from '../../components/RepeatBadge.vue';
 import VerificationBadge from '../../components/VerificationBadge.vue';
 import CompletionNoteInput from '../../components/CompletionNoteInput.vue';
 import PhotoUploader from '../../components/PhotoUploader.vue';
+import LoadingSpinner from '../../components/LoadingSpinner.vue';
 import { formatDateTime, formatRelativeDate, isOverdue, isNearExpiry } from '../../utils/date';
 
 type TaskDetail = components['schemas']['TaskDetail'];
@@ -404,10 +405,10 @@ onMounted(async () => {
   <AuthGuard>
     <view class="detail-page">
       <!-- ========== 加载中 ========== -->
-      <view v-if="isLoading" class="detail-page__center">
-        <view class="detail-page__spinner" />
-        <text class="detail-page__center-text">加载中...</text>
-      </view>
+      <LoadingSpinner
+        v-if="isLoading"
+        text="加载中..."
+      />
 
       <!-- ========== 错误状态 ========== -->
       <view v-else-if="error" class="detail-page__center">
@@ -878,14 +879,6 @@ onMounted(async () => {
     color: var(--color-text-secondary);
   }
 
-  &__spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
-    border-radius: var(--radius-full);
-    animation: detail-spin 0.8s linear infinite;
-  }
 
   &__retry-btn {
     padding: var(--space-sm) var(--space-xl);
@@ -1334,9 +1327,5 @@ onMounted(async () => {
     font-size: var(--font-size-caption);
     color: var(--color-text-secondary);
   }
-}
-
-@keyframes detail-spin {
-  to { transform: rotate(360deg); }
 }
 </style>

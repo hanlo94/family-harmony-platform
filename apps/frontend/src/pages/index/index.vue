@@ -30,6 +30,8 @@ import TaskFilter from '../../components/TaskFilter.vue';
 import TaskCard from '../../components/TaskCard.vue';
 import EmptyState from '../../components/EmptyState.vue';
 import FloatingActionButton from '../../components/FloatingActionButton.vue';
+import StarBurst from '../../components/StarBurst.vue';
+import LoadingSpinner from '../../components/LoadingSpinner.vue';
 
 type TaskListItem = components['schemas']['TaskListItem'];
 
@@ -242,10 +244,10 @@ onReachBottom(() => {
       />
 
       <!-- ========== 加载中 ========== -->
-      <view v-if="taskStore.isLoading && isFirstLoad" class="task-home__loading">
-        <view class="task-home__loading-spinner" />
-        <text class="task-home__loading-text">加载中...</text>
-      </view>
+      <LoadingSpinner
+        v-if="taskStore.isLoading && isFirstLoad"
+        text="加载中..."
+      />
 
       <!-- ========== 错误提示 ========== -->
       <view v-else-if="taskStore.error && taskStore.tasks.length === 0" class="task-home__error">
@@ -296,9 +298,7 @@ onReachBottom(() => {
       />
 
       <!-- ========== 任务完成星星动画 ========== -->
-      <view v-if="showStarAnimation" class="task-home__star-animation">
-        <text class="task-home__star">⭐</text>
-      </view>
+      <StarBurst v-model:visible="showStarAnimation" />
     </view>
   </AuthGuard>
 </template>
@@ -349,34 +349,6 @@ onReachBottom(() => {
 .task-home__header-switch-arrow {
   font-size: var(--font-size-caption);
   color: var(--color-white);
-}
-
-/* ========== 加载中 ========== */
-.task-home__loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2xl) 0;
-  gap: var(--space-md);
-}
-
-.task-home__loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: var(--radius-full);
-  animation: task-home-spin 0.8s linear infinite;
-}
-
-.task-home__loading-text {
-  font-size: var(--font-size-caption);
-  color: var(--color-text-secondary);
-}
-
-@keyframes task-home-spin {
-  to { transform: rotate(360deg); }
 }
 
 /* ========== 错误状态 ========== */
@@ -439,52 +411,5 @@ onReachBottom(() => {
 .task-home__no-more-text {
   font-size: var(--font-size-small);
   color: var(--color-border);
-}
-
-/* ========== 星星动画（视觉签名） ========== */
-.task-home__star-animation {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 200;
-  pointer-events: none;
-  animation: task-home-star-burst 1s ease-out forwards;
-}
-
-.task-home__star {
-  font-size: 60px;
-  display: block;
-  animation: task-home-star-spin 1s ease-out forwards;
-}
-
-@keyframes task-home-star-burst {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.2);
-  }
-  30% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.3);
-  }
-  60% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8) translateY(-40px);
-  }
-}
-
-@keyframes task-home-star-spin {
-  0% {
-    transform: rotate(0deg) scale(0.5);
-  }
-  50% {
-    transform: rotate(180deg) scale(1.2);
-  }
-  100% {
-    transform: rotate(360deg) scale(0.8);
-  }
 }
 </style>

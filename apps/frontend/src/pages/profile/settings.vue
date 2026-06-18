@@ -13,6 +13,7 @@ import { ref, onMounted } from 'vue';
 import { userApi } from '../../api';
 import type { components } from '../../types/api';
 import AuthGuard from '../../components/AuthGuard.vue';
+import LoadingSpinner from '../../components/LoadingSpinner.vue';
 
 type SettingItem = NonNullable<components['schemas']['UserSettings']['settings']>[number];
 
@@ -101,10 +102,10 @@ onMounted(() => {
   <AuthGuard>
     <view class="settings">
       <!-- ========== 加载中 ========== -->
-      <view v-if="isLoading" class="settings__loading">
-        <view class="settings__loading-spinner" />
-        <text class="settings__loading-text">加载中...</text>
-      </view>
+      <LoadingSpinner
+        v-if="isLoading"
+        text="加载中..."
+      />
 
       <!-- ========== 错误状态 ========== -->
       <view v-else-if="loadError" class="settings__error">
@@ -197,34 +198,6 @@ onMounted(() => {
     font-size: var(--font-size-caption);
     color: var(--color-text-secondary);
     line-height: 1.5;
-  }
-
-  /* ========== 加载中 ========== */
-  &__loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 60vh;
-    gap: var(--space-md);
-  }
-
-  &__loading-spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--color-border);
-    border-top-color: var(--color-primary);
-    border-radius: var(--radius-full);
-    animation: settings-spin 0.8s linear infinite;
-  }
-
-  &__loading-text {
-    font-size: var(--font-size-caption);
-    color: var(--color-text-secondary);
-  }
-
-  @keyframes settings-spin {
-    to { transform: rotate(360deg); }
   }
 
   /* ========== 错误状态 ========== */

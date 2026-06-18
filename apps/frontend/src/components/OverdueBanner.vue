@@ -78,8 +78,18 @@ const emit = defineEmits<{
 .overdue-banner {
   margin: var(--space-md) var(--space-lg) 0;
 
+  /* ========== 整体入场动画 ========== */
+  animation: overdue-banner-enter 0.4s ease-out;
+
   &__section {
     margin-bottom: var(--space-md);
+
+    /* 分区入场动画 — 依次滑入 */
+    animation: overdue-section-slide-in 0.35s ease-out both;
+
+    &:nth-child(2) {
+      animation-delay: 0.1s;
+    }
   }
 
   /* ========== 分区标题 ========== */
@@ -90,6 +100,7 @@ const emit = defineEmits<{
     padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
     background: var(--color-overdue-bg);
+    transition: background 0.3s ease;
 
     &--overdue {
       background: var(--color-overdue-bg);
@@ -102,6 +113,8 @@ const emit = defineEmits<{
 
   &__section-icon {
     font-size: var(--font-size-body);
+    /* 图标微动效 */
+    animation: overdue-icon-pulse 3s ease-in-out infinite;
   }
 
   &__section-title {
@@ -114,6 +127,42 @@ const emit = defineEmits<{
   &__list {
     display: flex;
     flex-direction: column;
+  }
+}
+
+/* ========== 动画关键帧 ========== */
+
+/* 整体容器淡入 */
+@keyframes overdue-banner-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 各分区依次滑入 */
+@keyframes overdue-section-slide-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 图标脉冲（吸引注意但不打扰） */
+@keyframes overdue-icon-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
   }
 }
 </style>
