@@ -21,6 +21,10 @@ export enum ErrorCode {
   NOT_FAMILY_MEMBER = 40301,
   CHILD_NOT_ALLOWED = 40302,
 
+  // ── 上传相关 (40002-40009) ──
+  FILE_TYPE_INVALID = 40002,
+  FILE_SIZE_EXCEEDED = 40003,
+
   // ── 资源不存在 (40400-40499) ──
   NOT_FOUND = 40400,
   USER_NOT_FOUND = 40401,
@@ -49,6 +53,8 @@ export const ErrorCodeMessage: Record<ErrorCode, string> = {
   [ErrorCode.SUCCESS]: '操作成功',
 
   [ErrorCode.VALIDATION_ERROR]: '参数校验失败',
+  [ErrorCode.FILE_TYPE_INVALID]: '仅支持 JPG、PNG、WebP 格式',
+  [ErrorCode.FILE_SIZE_EXCEEDED]: '文件大小不能超过 5MB',
 
   [ErrorCode.UNAUTHORIZED]: '未登录或登录已过期',
   [ErrorCode.TOKEN_EXPIRED]: 'Token 已过期',

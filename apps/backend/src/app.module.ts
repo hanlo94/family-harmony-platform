@@ -12,6 +12,7 @@ import { UserModule } from './user/user.module';
 import { FamilyModule } from './family/family.module';
 import { TaskModule } from './task/task.module';
 import { TemplateModule } from './template/template.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { TemplateModule } from './template/template.module';
     FamilyModule,
     TaskModule,
     TemplateModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [

@@ -176,7 +176,7 @@
 | C02-5  | Family 模块       | 创建家庭、成员管理（三角色）、邀请码生成/验证、加入/移除成员、任务统计接口                                                                                                         | 1.5天 | ✅   |
 | C02-6  | Task 模块         | 任务 CRUD、状态机流转（v1.1: PENDING_COMPLETION↔PENDING_VERIFICATION↔REJECTED↔COMPLETED↔CANCELLED）、重复任务不存储计算状态、完成验收/驳回、取消（含权限：ORGANIZER+MEMBER创建者） | 3天   | ✅   |
 | C02-7  | Template 模块     | 模板列表查询、按分类筛选 🆕                                                                                                                                                        | 0.5天 | ✅   |
-| C02-8  | Upload 模块       | 图片上传、压缩、本地存储                                                                                                                                                           | 0.5天 | ⬜   |
+| C02-8  | Upload 模块       | 图片上传、压缩、本地存储                                                                                                                                                           | 0.5天 | ✅   |
 | C02-9  | Notification 模块 | 微信模板消息、定时任务扫描到期任务（含reminder_enabled开关检查）、发送记录                                                                                                         | 1.5天 | ⬜   |
 | C02-10 | Swagger 文档      | NestJS OpenAPI 配置、自动生成 26 个 API 文档                                                                                                                                       | 0.5天 | ⬜   |
 
