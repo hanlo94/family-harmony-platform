@@ -1,4 +1,5 @@
-import { IsOptional, IsUUID, IsEnum, IsString } from 'class-validator';
+import { IsOptional, IsUUID, IsEnum, IsString, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 
 export enum TaskStatusFilter {
@@ -27,4 +28,16 @@ export class ListTaskDto extends PaginationDto {
   @IsOptional()
   @IsString()
   keyword?: string;
+
+  /** 仅返回已逾期任务（status=PENDING_COMPLETION + deadline < NOW） */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  overdue?: boolean;
+
+  /** 仅返回临近到期任务（status=PENDING_COMPLETION + deadline 在 1 小时内） */
+  @IsOptional()
+  @IsBoolean()
+  @Type(() => Boolean)
+  nearExpiry?: boolean;
 }

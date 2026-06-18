@@ -10,6 +10,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FamilyModule } from './family/family.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FamilyModule } from './family/family.module';
     AuthModule,
     UserModule,
     FamilyModule,
+    TaskModule,
   ],
   controllers: [AppController],
   providers: [
