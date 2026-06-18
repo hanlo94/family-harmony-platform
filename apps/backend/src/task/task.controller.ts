@@ -8,7 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { MemberRole } from '@prisma/client';
 import { TaskService } from './task.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -48,6 +48,7 @@ export class TaskController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '创建任务' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiBody({ type: CreateTaskDto })
   async createTask(
     @CurrentUser() user: CurrentUserInfo,
@@ -71,6 +72,7 @@ export class TaskController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取任务列表' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   @ApiQuery({ name: 'status', required: false, enum: ['PENDING_COMPLETION', 'PENDING_VERIFICATION', 'REJECTED', 'COMPLETED', 'CANCELLED'] })
   @ApiQuery({ name: 'assignedTo', required: false, description: '执行人用户 ID' })
   @ApiQuery({ name: 'overdue', required: false, type: Boolean, description: '仅返回已逾期任务' })
@@ -98,6 +100,8 @@ export class TaskController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取任务详情' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   async getTaskDetail(
     @Param('familyId') familyId: string,
     @Param('id') taskId: string,
@@ -119,6 +123,8 @@ export class TaskController {
   @Roles(MemberRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({ summary: '编辑任务' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   @ApiBody({ type: UpdateTaskDto })
   async updateTask(
     @Param('familyId') familyId: string,
@@ -143,6 +149,8 @@ export class TaskController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '标记任务完成' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   @ApiBody({ type: CompleteTaskDto })
   async completeTask(
     @CurrentUser() user: CurrentUserInfo,
@@ -167,6 +175,8 @@ export class TaskController {
   @Roles(MemberRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({ summary: '验收通过' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   async verifyTask(
     @CurrentUser() user: CurrentUserInfo,
     @Param('familyId') familyId: string,
@@ -190,6 +200,8 @@ export class TaskController {
   @Roles(MemberRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({ summary: '驳回任务' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   @ApiBody({ type: RejectTaskDto })
   async rejectTask(
     @CurrentUser() user: CurrentUserInfo,
@@ -213,6 +225,8 @@ export class TaskController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '取消任务' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'id', description: '任务 ID', format: 'uuid', example: '770e8400-e29b-41d4-a716-446655440002' })
   @ApiBody({ type: CancelTaskDto })
   async cancelTask(
     @CurrentUser() user: CurrentUserInfo,

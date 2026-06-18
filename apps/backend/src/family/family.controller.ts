@@ -7,7 +7,7 @@ import {
   Param,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
 import { MemberRole } from '@prisma/client';
 import { FamilyService } from './family.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -101,6 +101,7 @@ export class FamilyController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取家庭详情' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   async getFamilyDetail(@Param('familyId') familyId: string) {
     return this.familyService.getFamilyDetail(familyId);
   }
@@ -118,6 +119,7 @@ export class FamilyController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取家庭成员列表' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   async getMembers(@Param('familyId') familyId: string) {
     return this.familyService.getMembers(familyId);
   }
@@ -136,6 +138,7 @@ export class FamilyController {
   @Roles(MemberRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({ summary: '生成邀请码' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   async createInvitation(
     @CurrentUser() user: CurrentUserInfo,
     @Param('familyId') familyId: string,
@@ -158,6 +161,8 @@ export class FamilyController {
   @Roles(MemberRole.ORGANIZER)
   @ApiBearerAuth()
   @ApiOperation({ summary: '移除家庭成员' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
+  @ApiParam({ name: 'memberId', description: '成员 ID（family_members 表主键）', format: 'uuid', example: '660e8400-e29b-41d4-a716-446655440001' })
   async removeMember(
     @CurrentUser() user: CurrentUserInfo,
     @Param('familyId') familyId: string,
@@ -181,6 +186,7 @@ export class FamilyController {
   @UseGuards(JwtAuthGuard, FamilyMemberGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: '获取家庭任务统计' })
+  @ApiParam({ name: 'familyId', description: '家庭 ID', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' })
   async getTaskStats(@Param('familyId') familyId: string) {
     return this.familyService.getTaskStats(familyId);
   }

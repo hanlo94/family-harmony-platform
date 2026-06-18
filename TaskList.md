@@ -178,7 +178,7 @@
 | C02-7  | Template 模块     | 模板列表查询、按分类筛选 🆕                                                                                                                                                        | 0.5天 | ✅   |
 | C02-8  | Upload 模块       | 图片上传、压缩、本地存储                                                                                                                                                           | 0.5天 | ✅   |
 | C02-9  | Notification 模块 | 微信模板消息、定时任务扫描到期任务（含reminder_enabled开关检查）、发送记录                                                                                                         | 1.5天 | ✅   |
-| C02-10 | Swagger 文档      | NestJS OpenAPI 配置、自动生成 26 个 API 文档                                                                                                                                       | 0.5天 | ⬜   |
+| C02-10 | Swagger 文档      | NestJS OpenAPI 配置、自动生成 26 个 API 文档                                                                                                                                       | 0.5天 | ✅   |
 
 ---
 
