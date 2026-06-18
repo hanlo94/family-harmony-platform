@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { FamilyModule } from './family/family.module';
 import { TaskModule } from './task/task.module';
+import { TemplateModule } from './template/template.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { TaskModule } from './task/task.module';
     UserModule,
     FamilyModule,
     TaskModule,
+    TemplateModule,
   ],
   controllers: [AppController],
   providers: [
