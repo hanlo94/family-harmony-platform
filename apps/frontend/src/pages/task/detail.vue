@@ -25,12 +25,13 @@ import {
   rejectTask,
   cancelTask,
 } from '../../api/task';
-import { uploadImage } from '../../api/upload';
 import type { components } from '../../types/api';
 import AuthGuard from '../../components/AuthGuard.vue';
 import StarRating from '../../components/StarRating.vue';
 import RepeatBadge from '../../components/RepeatBadge.vue';
 import VerificationBadge from '../../components/VerificationBadge.vue';
+import CompletionNoteInput from '../../components/CompletionNoteInput.vue';
+import PhotoUploader from '../../components/PhotoUploader.vue';
 import { formatDateTime, formatRelativeDate, isOverdue, isNearExpiry } from '../../utils/date';
 
 type TaskDetail = components['schemas']['TaskDetail'];
@@ -374,32 +375,6 @@ function handlePreviewPhoto(url: string): void {
   uni.previewImage({ urls: [url] });
 }
 
-/** 选择照片 */
-async function handleChoosePhoto(): Promise<void> {
-  try {
-    const res = await uni.chooseImage({
-      count: 1,
-      sizeType: ['compressed'],
-      sourceType: ['album', 'camera'],
-    });
-
-    if (res.tempFilePaths && res.tempFilePaths.length > 0) {
-      // 上传照片
-      uni.showLoading({ title: '上传中...' });
-      const uploadResult = await uploadImage(res.tempFilePaths[0]!);
-      uni.hideLoading();
-
-      if (uploadResult.data?.url) {
-        completionPhoto.value = uploadResult.data.url;
-      } else {
-        uni.showToast({ title: '上传失败，请重试', icon: 'none' });
-      }
-    }
-  } catch {
-    // 用户取消选择，静默处理
-  }
-}
-
 // ========== 生命周期 ==========
 
 onLoad((options?: Record<string, string>) => {
@@ -668,34 +643,12 @@ onMounted(async () => {
 
             <!-- 备注输入 -->
             <view class="detail-page__form-field">
-              <text class="detail-page__form-label">填写备注（选填）</text>
-              <textarea
-                v-model="completionNote"
-                class="detail-page__textarea"
-                placeholder="例如：已用洗洁精认真洗了三遍..."
-                :maxlength="300"
-                placeholder-class="detail-page__placeholder"
-                :auto-height="true"
-              />
+              <CompletionNoteInput v-model="completionNote" />
             </view>
 
             <!-- 照片上传 -->
             <view class="detail-page__form-field">
-              <text class="detail-page__form-label">📎 上传照片（选填，最多1张）</text>
-              <view v-if="!completionPhoto" class="detail-page__upload-btn" @tap="handleChoosePhoto">
-                <text class="detail-page__upload-icon">+</text>
-                <text class="detail-page__upload-text">选择照片</text>
-              </view>
-              <view v-else class="detail-page__upload-preview">
-                <image
-                  :src="completionPhoto"
-                  class="detail-page__upload-img"
-                  mode="aspectFill"
-                />
-                <view class="detail-page__upload-remove" @tap="completionPhoto = ''">
-                  <text class="detail-page__upload-remove-text">✕</text>
-                </view>
-              </view>
+              <PhotoUploader v-model="completionPhoto" />
             </view>
 
             <!-- 表单操作按钮 -->
@@ -791,33 +744,14 @@ onMounted(async () => {
             <text class="detail-page__form-title">重新提交</text>
 
             <view class="detail-page__form-field">
-              <text class="detail-page__form-label">填写备注（选填）</text>
-              <textarea
+              <CompletionNoteInput
                 v-model="completionNote"
-                class="detail-page__textarea"
                 placeholder="说明本次改进..."
-                :maxlength="300"
-                placeholder-class="detail-page__placeholder"
-                :auto-height="true"
               />
             </view>
 
             <view class="detail-page__form-field">
-              <text class="detail-page__form-label">📎 上传照片（选填，最多1张）</text>
-              <view v-if="!completionPhoto" class="detail-page__upload-btn" @tap="handleChoosePhoto">
-                <text class="detail-page__upload-icon">+</text>
-                <text class="detail-page__upload-text">选择照片</text>
-              </view>
-              <view v-else class="detail-page__upload-preview">
-                <image
-                  :src="completionPhoto"
-                  class="detail-page__upload-img"
-                  mode="aspectFill"
-                />
-                <view class="detail-page__upload-remove" @tap="completionPhoto = ''">
-                  <text class="detail-page__upload-remove-text">✕</text>
-                </view>
-              </view>
+              <PhotoUploader v-model="completionPhoto" />
             </view>
 
             <view class="detail-page__form-actions">
@@ -1341,63 +1275,6 @@ onMounted(async () => {
   &__placeholder {
     color: var(--color-text-secondary);
     opacity: 0.5;
-  }
-
-  /* 照片上传 */
-  &__upload-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-xs);
-    width: 100px;
-    height: 100px;
-    border: 2px dashed var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-bg);
-  }
-
-  &__upload-icon {
-    font-size: 28px;
-    color: var(--color-text-secondary);
-    line-height: 1;
-  }
-
-  &__upload-text {
-    font-size: var(--font-size-small);
-    color: var(--color-text-secondary);
-  }
-
-  &__upload-preview {
-    position: relative;
-    width: 100px;
-    height: 100px;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-
-  &__upload-img {
-    width: 100%;
-    height: 100%;
-  }
-
-  &__upload-remove {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    width: 22px;
-    height: 22px;
-    border-radius: var(--radius-full);
-    background: var(--color-rose);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  &__upload-remove-text {
-    font-size: 12px;
-    color: var(--color-white);
-    line-height: 1;
   }
 
   /* 表单内操作按钮 */
