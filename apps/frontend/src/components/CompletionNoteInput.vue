@@ -15,6 +15,8 @@
  *
  * 设计参考: docs/ui-design.md §4.2
  */
+import { computed } from 'vue';
+
 const props = withDefaults(
   defineProps<{
     modelValue: string;
