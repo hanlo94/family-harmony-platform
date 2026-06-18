@@ -412,7 +412,11 @@ export class TaskService {
     if (dto.title !== undefined) updateData.title = dto.title;
     if (dto.description !== undefined) updateData.description = dto.description;
     if (dto.difficulty !== undefined) updateData.difficulty = dto.difficulty;
-    if (dto.deadline !== undefined) updateData.deadline = new Date(dto.deadline);
+    if (dto.deadline !== undefined) {
+      updateData.deadline = new Date(dto.deadline);
+      // 截止时间变更 → 重置通知标记，允许新 deadline 再次触发提醒
+      updateData.hasNotified = false;
+    }
     if (dto.assignedTo !== undefined) updateData.assignedTo = dto.assignedTo;
     if (dto.repeatRule !== undefined) updateData.repeatRule = dto.repeatRule;
     if (dto.needsVerification !== undefined) updateData.needsVerification = dto.needsVerification;
