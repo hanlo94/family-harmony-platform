@@ -1,16 +1,25 @@
 <script setup lang="ts">
 /**
- * 登录页 — 微信 OAuth 一键登录
+ * 登录页 — 微信 OAuth 一键登录 / 开发模式登录
  *
  * 支持双平台登录流程：
- * - H5：跳转微信 OAuth 授权页 → 回调后提取 code → 调用 POST /api/auth/wechat/h5/login
- * - 小程序：调用 uni.login 获取 code → 调用 POST /api/auth/wechat/mp/login
+ * - H5（微信浏览器内）：跳转微信 OAuth 授权页 → 回调后提取 code → POST /api/auth/wechat/h5/login
+ * - H5（非微信浏览器）：开发模式 — 点击测试用户按钮 → POST /api/auth/wechat/h5/login（code = test_xxx）
+ * - 小程序：调用 uni.login 获取 code → POST /api/auth/wechat/mp/login
  *
  * 登录成功后：switchTab 到首页（任务列表）
+ *
+ * ## 开发模式
+ * 在非微信浏览器中，直接使用 test_ 前缀的 code 登录，后端会将其作为 openid 使用。
+ * 预置的测试用户（由后端 seed 创建）：
+ *   - test_openid_user1 → 爸爸（ORGANIZER 角色）
+ *   - test_openid_user2 → 妈妈（MEMBER 角色）
+ *   - test_openid_user3 → 小明（CHILD 角色）
  */
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { useAuthStore } from '../../stores/auth';
+import { isWechatBrowser } from '../../utils/wechat';
 import WechatLoginButton from '../../components/WechatLoginButton.vue';
 
 const authStore = useAuthStore();
@@ -19,6 +28,15 @@ const loginError = ref('');
 
 /** WeChat 公众号 AppID（从环境变量注入） */
 const WECHAT_H5_APP_ID = import.meta.env.VITE_WECHAT_H5_APP_ID || '';
+
+const inWechat = computed(() => isWechatBrowser());
+
+/** 测试用户列表（开发模式使用） */
+const testUsers = [
+  { label: '爸爸（组织者）', code: 'test_openid_user1', icon: '👨' },
+  { label: '妈妈（成员）', code: 'test_openid_user2', icon: '👩' },
+  { label: '小明（孩子）', code: 'test_openid_user3', icon: '🧒' },
+];
 
 // ========== 生命周期 ==========
 
@@ -32,9 +50,11 @@ onMounted(async () => {
     return;
   }
 
-  // H5 环境：检查 URL 是否包含微信回调 code
+  // H5 环境：检查 URL 是否包含微信回调 code（仅微信浏览器内）
   // #ifdef H5
-  handleH5Callback();
+  if (isWechatBrowser()) {
+    handleH5Callback();
+  }
   // #endif
 });
 
@@ -59,6 +79,26 @@ async function handleWechatLogin(): Promise<void> {
     // #endif
   } catch {
     loginError.value = '登录失败，请重试';
+  } finally {
+    loading.value = false;
+  }
+}
+
+/** 开发模式登录：使用测试 code 直接调用后端 */
+async function handleDevLogin(code: string): Promise<void> {
+  loginError.value = '';
+  loading.value = true;
+
+  try {
+    const result = await authStore.doLoginByWechatH5(code);
+    if (result.success) {
+      uni.switchTab({ url: '/pages/index/index' });
+    } else {
+      loginError.value = result.error || '登录失败，请重试';
+      uni.showToast({ title: loginError.value, icon: 'none' });
+    }
+  } catch {
+    loginError.value = '网络异常，请重试';
   } finally {
     loading.value = false;
   }
@@ -145,10 +185,40 @@ async function handleMpLogin(): Promise<void> {
 
     <!-- 登录按钮区 -->
     <view class="login-page__actions">
-      <WechatLoginButton :loading="loading" @login="handleWechatLogin" />
+      <!-- H5 微信浏览器环境 → 微信一键登录 -->
+      <template v-if="inWechat">
+        <WechatLoginButton :loading="loading" @login="handleWechatLogin" />
 
-      <!-- 错误提示 -->
-      <text v-if="loginError" class="login-page__error">{{ loginError }}</text>
+        <!-- 错误提示 -->
+        <text v-if="loginError" class="login-page__error">{{ loginError }}</text>
+      </template>
+
+      <!-- H5 非微信环境（开发模式）→ 测试用户快捷登录 -->
+      <!-- #ifdef H5 -->
+      <template v-else>
+        <text class="login-page__dev-title">选择测试用户登录</text>
+        <view class="login-page__test-users">
+          <button
+            v-for="user in testUsers"
+            :key="user.code"
+            class="login-page__test-user-btn"
+            :disabled="loading"
+            @click="handleDevLogin(user.code)"
+          >
+            <text class="login-page__test-user-icon">{{ user.icon }}</text>
+            <text class="login-page__test-user-label">{{ user.label }}</text>
+          </button>
+        </view>
+
+        <!-- 错误提示 -->
+        <text v-if="loginError" class="login-page__error">{{ loginError }}</text>
+
+        <!-- 开发模式提示 -->
+        <text class="login-page__dev-hint">
+          非微信环境使用测试账号登录。正式环境请在微信客户端中打开。
+        </text>
+      </template>
+      <!-- #endif -->
     </view>
 
     <!-- 底部说明 -->
@@ -222,6 +292,63 @@ async function handleMpLogin(): Promise<void> {
   &__footer-text {
     font-size: var(--font-size-small);
     color: var(--color-text-secondary);
+  }
+
+  /* ========== 开发模式 ========== */
+  &__dev-title {
+    font-size: var(--font-size-body);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-sm);
+  }
+
+  &__test-users {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 260px;
+  }
+
+  &__test-user-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+    height: 52px;
+    padding: 0 var(--space-lg);
+    background: var(--color-bg);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-body);
+    color: var(--color-text);
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(61, 107, 90, 0.15);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+
+  &__test-user-icon {
+    font-size: 24px;
+  }
+
+  &__test-user-label {
+    font-size: var(--font-size-body);
+    color: var(--color-text);
+  }
+
+  &__dev-hint {
+    font-size: var(--font-size-small);
+    color: var(--color-text-secondary);
+    text-align: center;
+    max-width: 260px;
+    margin-top: var(--space-md);
+    line-height: 1.5;
   }
 }
 </style>
