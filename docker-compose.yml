@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════
+# 家庭共享任务协作平台 — Docker 开发环境
+# ═══════════════════════════════════════════════════════
+#
+# 用法：
+#   docker compose up -d          # 启动 PostgreSQL
+#   docker compose down           # 停止并移除容器
+#   docker compose down -v        # 停止并删除数据卷（重置数据库）
+#
+# 数据库连接（匹配 apps/backend/.env）：
+#   postgresql://postgres:postgres@localhost:5432/family_harmony_dev
+# ═══════════════════════════════════════════════════════
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: family-harmony-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: family_harmony_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d family_harmony_dev']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
